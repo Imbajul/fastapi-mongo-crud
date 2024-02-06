@@ -4,6 +4,7 @@ from datetime import datetime
 
 class AppSettings(BaseSettings):
     api_port: int | None = 8000
+    data_dir: str | None = "./data"
 
 class User(BaseModel):
     first_name: str | None = None

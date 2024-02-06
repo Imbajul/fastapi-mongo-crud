@@ -1,13 +1,16 @@
 import socket
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, UploadFile
 from fastapi.encoders import jsonable_encoder
 import uvicorn
 
 import models
 import database
+from helpers import setup_data_dir
 
 # - App configs --------------------------
 AppConf = models.AppSettings()
+setup_data_dir()
 
 # - Initialiting Database & API -------------------
 MyDB = database.MongoDatabase(mongohost="localhost", mongoport=27017)
@@ -31,6 +34,12 @@ async def root():
 # Post User V1
 @app.post('/api/v1/user')
 async def post_user(user:models.User):
+    """
+    Erstellt einen nuen User in der DB.
+
+    :param request_data: Request-Body, der das Pydantic-Modell User verwendet
+    :return: Successfull operation message
+    """
 
     print(user)
     data = jsonable_encoder(user)
@@ -78,6 +87,20 @@ async def update_user(user_id: str, user:models.User):
 
     return resObj
 
+@app.post('/api/v1/upload')
+async def upload_file(file: UploadFile):
+    with open (f"{AppConf.data_dir}/{file.filename}", 'wb') as f:
+        content = await file.read()
+        f.write(content)
+
+    resObj = {
+        "message": f"Uploaded {file.filename}",
+        "status_code": 200
+    }
+
+    return resObj
+
+
 # The Runner -----------------------------------
 if __name__ == "__main__":
-    uvicorn.run(app="__main__:app", host="0.0.0.0", port=AppConf.api_port, reload=True)
+    uvicorn.run(app="__main__:app", host="0.0.0.0", port=AppConf.api_port, reload=False)
