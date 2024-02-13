@@ -1,60 +1,42 @@
 import pymongo
 import models
+from models import User
 from bson import ObjectId
+from helpers import hash_password
+
 
 class MongoDatabase():
-    """
-    Initializing MongoDB and conn.
-
-    :Init Vars:
-    mongohost = str
-    mongoport = str
-
-    :Methods:
-    Setp connect: create db and coll
-    """
     def __init__(self, mongohost:str, mongoport:int) -> None:
-        self.monghost = mongohost                               # Setzen Sie den Hostnamen der MongoDB.
-        self.mongoport =  mongoport                             # Setzen Sie die Portnummer der MongoDB.
-        self.myclient = None                                    # Initialisieren Sie den MongoDB-Client.
-        self.mydb = None                                        # Initialisieren Sie die MongoDB-Datenbank.
-        self.mycoll = None                                      # Initialisieren Sie die MongoDB-Sammlung.
+        self.monghost = mongohost
+        self.mongoport =  mongoport
+        self.myclient = None
+        self.mydb = None
+        self.mycoll = None
 
     def setup_connection(self, database_name:str, collection_name:str):
-        uri = f"mongodb://{self.monghost}:{self.mongoport}/"    # MongoDB-Verbindungs-URI erstellen.
+        uri = f"mongodb://{self.monghost}:{self.mongoport}/"
         print(uri)
-        self.myclient = pymongo.MongoClient(uri)                # MongoDB-Client erstellen.
-        self.mydb = self.myclient[database_name]                # Datenbank auswählen.
-        self.mycoll = self.mydb[collection_name]                # Sammlung auswählen.
+        self.myclient = pymongo.MongoClient(uri)
+        self.mydb = self.myclient[database_name]
+        self.mycoll = self.mydb[collection_name]
 
     def insert_one(self, item:models.User):
-        self.mycoll.insert_one(item)                            # Löschen Sie das Dokument mit der angegebenen ID.
-
-        """
-        Ein Dokument in die MongoDB-Sammlung einfügen.
-
-        :param item: Das einzufügende Dokument.
-        """
+        self.mycoll.insert_one(item)
 
     def find_all(self) -> list:
-        """
-        Findet und gibt alle Dokumente in der MongoDB-Sammlung zurück.
-        """
         cursor = self.mycoll.find({})
         docuements = []
         for doc in cursor:
             doc["_id"] = str(doc["_id"])
             docuements.append(doc)
-        return docuements                                        # Rückgabe der Liste aller Dokumente.
+        return docuements
     
     def delete_user(self, id:str):
-        self.mycoll.delete_one({'_id': ObjectId(id)})            # Löschen Sie das Dokument mit der angegebenen ID.
+        self.mycoll.delete_one({'_id': ObjectId(id)})
 
     def update_user(self, user_id: str, user: models.User):
         update_fields = {}
-
-# Überprüfen Sie jedes Feld des Benutzers und aktualisieren Sie es entsprechend.
-
+        
         if user.first_name is not None:
             update_fields["first_name"] = user.first_name
         if user.last_name is not None:
@@ -65,10 +47,14 @@ class MongoDatabase():
             update_fields["gender"] = user.gender
         if user.admin is not None:
             update_fields["admin"] = user.admin
-    
+        if user.admin is not None: 
+            update_fields["email"] = user.email
+        if user.username is not None:
+            update_fields ["username"] = user.username
+        if user.password is not None: 
+            hashed_password = hash_password(user.password)        
+            update_fields["password"] = hashed_password
 
         query = {"_id": ObjectId(user_id)}
         new_values = {"$set": update_fields}
         self.mycoll.update_one(query, new_values)
-
-
